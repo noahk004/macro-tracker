@@ -1,45 +1,77 @@
-import express, { Request, Response } from "express";
-import dotenv from "dotenv";
-import { generateSalt, hash } from "../util/auth";
-import { Pool } from "pg";
+import express, { Response } from "express";
+import { CustomRequest } from "../../types/express";
+import { generateSalt, generateToken, hash } from "../util/auth";
+
+import pool from "../util/db";
 
 const router = express.Router();
 
-dotenv.config();
-
-const pool = new Pool({
-  user: process.env.PG_USERNAME, // Username for PostgreSQL
-  host: process.env.PG_HOSTNAME, // Endpoint of your RDS instance
-  database: process.env.PG_DATABASE, // Database name
-  password: process.env.PG_PASSWORD, // Password for PostgreSQL user
-  port: Number(process.env.PG_PORT), // Port number (5432 is default for PostgreSQL)
-  ssl: {
-    rejectUnauthorized: false, // Required for AWS RDS
-  },
-});
-
-router.post("/users", async (req: Request, res: Response) => {
-  const { username, password } = req.body;
-
-  const salt = generateSalt();
-  const passwordHash = hash(password, salt);
-
-  res.send("sent");
-
+router.post("/users", async (req: CustomRequest, res: Response) => {
+  console.log("POST REQUEST MADE TO /api/auth/users")
   try {
-    const result = await pool.query(`
+    const { username, password } = req.body;
+
+    const salt = generateSalt();
+    const passwordHash = hash(password, salt);
+
+    // Check if username already exists
+    const query = "SELECT * FROM users WHERE username = $1";
+    const values = [username];
+
+    const result = await pool.query(query, values);
+    if (result.rows.length > 0) {
+      res.status(500).json({ message: "Username already exists, duplicate username." });
+      return;
+    }
+
+    await pool.query(`
       INSERT INTO users (username, password_hash, salt)
       VALUES ('${username}', '${passwordHash}', '${salt}');
-    `); // Example query
-    res.json(result.rows); // Send the result as JSON
+    `);
+    res.status(201).json({ message: `User created: ${username}` });
   } catch (err) {
     console.error(
       `Something went wrong while adding a user to postgres: ${err}`
     );
-    res.status(500).send("Error connecting to the database");
+    res.status(500).json({ message: "Error connecting to the database." });
   }
 });
 
-router.delete("/users/:id", (req: Request, res: Response) => {});
+router.post("/token", async (req: CustomRequest, res: Response) => {
+  console.log("POST REQUEST MADE TO /api/auth/tokens")
+
+  const { username, password } = req.body;
+
+  try {
+    const query = "SELECT * FROM users WHERE username = $1";
+    const values = [username];
+
+    const result = await pool.query(query, values);
+
+    if (result.rows.length == 0) {
+      res.status(404).send("User not found");
+      return;
+    }
+
+    if (hash(password, result.rows[0].salt) == result.rows[0].password_hash) {
+      const jwt = generateToken(result.rows[0].user_id, username);
+      
+      res.cookie("jwt", jwt, {
+        maxAge: 30 * 24 * 60 * 60 * 1000
+      })
+
+      res.status(200).json({ message: "Token created." })
+      return;
+    } else {
+      res.status(401).json({ message: "Password incorrect." });
+      return;
+    }
+  } catch (err) {
+    console.error(
+      `Something went wrong while fetching a token to postgres: ${err}.`
+    );
+    res.status(500).json({ message: "Error connecting to the database." });
+  }
+});
 
 export default router;
