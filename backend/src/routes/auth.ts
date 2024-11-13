@@ -37,7 +37,7 @@ router.post("/users", async (req: CustomRequest, res: Response) => {
   }
 });
 
-router.post("/token", async (req: CustomRequest, res: Response) => {
+router.post("/tokens", async (req: CustomRequest, res: Response) => {
   console.log("POST REQUEST MADE TO /api/auth/tokens")
 
   const { username, password } = req.body;
@@ -49,7 +49,7 @@ router.post("/token", async (req: CustomRequest, res: Response) => {
     const result = await pool.query(query, values);
 
     if (result.rows.length == 0) {
-      res.status(404).send("User not found");
+      res.status(404).json({ message: "User not found" });
       return;
     }
 

@@ -1,15 +1,13 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import LogView from "./views/LogView";
+import { Button } from "@/components/ui/button";
 
 export default function Page() {
-    return (
-        <div>
-            
-            <h1>My Items</h1>
-            <Button asChild>
-                <Link href="/">Back Home</Link>
-            </Button>
-            <Button>Add new item</Button>
-        </div>
-    )
+  return (
+    <div>
+        <h1 className="text-2xl">My Logs</h1>
+        <LogView />
+        <Button>Add new log</Button>
+    </div>
+  );
 }

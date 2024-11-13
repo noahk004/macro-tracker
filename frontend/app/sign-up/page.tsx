@@ -52,8 +52,7 @@ export default function Page() {
       
     } catch (error) {
       console.error("Something went wrong while adding a new user: ", error);
-    } finally {
-      setLoading(false);
+      setLoading(false)
     }
   };
 
@@ -62,7 +61,7 @@ export default function Page() {
       <div className="md:border-2 px-6 py-8 md:border-gray-200 rounded-2xl flex flex-col gap-3">
         <div>
           <h1 className="font-bold text-2xl">Sign Up</h1>
-          <p>Create an account by entering your credentials.</p>
+          <p>Create an account by entering your desired username and password.</p>
         </div>
 
         <div>

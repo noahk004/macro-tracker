@@ -5,7 +5,8 @@ export default function Page() {
     <div>
       <h1>Macro Tracker</h1>
 
-      <Button asChild><Link href="/items">View Items</Link></Button>
+      <Button asChild><Link href="/sign-in">Sign In</Link></Button>
+      <Button asChild><Link href="/sign-up">Sign Up</Link></Button>
     </div>
   )
 }
